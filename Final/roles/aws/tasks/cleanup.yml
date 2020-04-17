@@ -1,0 +1,71 @@
+---
+- name: Gather info about EC2 instance
+  ec2_instance_facts:
+    region: "{{ region }}"
+    filters:
+      instance-state-name: running
+  register: ec2_data
+- name: Variable for routing table 
+  ec2_vpc_route_table_facts:
+    region: "{{ region }}"
+  register: routing_table_stuff
+- name: Print ec2_data
+  debug: 
+    msg: "{{ ec2_data }}"
+- name: Delete EIP
+  ec2_eip:
+    region: "{{ region }}"
+    release_on_disassociation: yes
+    device_id: "{{ ec2_data.instances[0].instance_id }}"
+    state: absent
+- name: Delete EC2 Instance
+  ec2:
+    instance_ids:
+      - "{{ ec2_data.instances[0].instance_id }}"
+    state: absent
+    instance_type: t2.micro
+    image: ami-01ed306a12b7d1c96
+    region: "{{ region }}"
+    wait: yes
+    wait_timeout: 180
+- name: Delete Security Group
+  ec2_group:
+    region: "{{ region }}"
+    group_id: "{{ ec2_data.instances[0].security_groups[0].group_id }}"
+    state: absent
+- name: pause for 45 seconds
+  pause:
+    seconds: 45
+- name: Delete IGW
+  ec2_vpc_igw:
+    state: absent
+    region: "{{ region }}"
+    vpc_id: "{{ ec2_data.instances[0].vpc_id }}"
+    tags:
+     Name: "{{ vpc_prefixname }}_gateway"
+- name: pause for 2 minute
+  pause:
+    minutes: 2
+- name: Delete Subnet
+  ec2_vpc_subnet:
+    state: absent
+    cidr: "{{ subnet_cidrnum }}"
+    region: "{{ region }}"
+    vpc_id: "{{ ec2_data.instances[0].vpc_id }}"
+- name: pause for 30 seconds
+  pause:
+    seconds: 30
+- name: Delete Routing Table
+  ec2_vpc_route_table:
+    vpc_id: "{{ ec2_data.instances[0].vpc_id }}"
+    region: "{{ region }}"
+    route_table_id: "{{ routing_table_stuff.route_tables[0].id }}"
+    lookup: id
+    state: absent
+- name: Delete VPC
+  ec2_vpc_net:   
+    name: "{{ vpc_prefixname }}"
+    cidr_block: "{{ cidr_blocknum }}"
+    region: "{{ region }}"
+    state: absent  
+    purge_cidrs: yes

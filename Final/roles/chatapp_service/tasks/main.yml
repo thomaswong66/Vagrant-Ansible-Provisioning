@@ -1,0 +1,56 @@
+---
+# tasks file for roles/chatapp_service
+
+- name: install git
+  become: yes
+  package:
+    name: git
+    state: installed
+- name: SEL thingy
+  become: yes
+  selinux: 
+    state: disabled
+- name: create chatapp user
+  become: yes
+  user:
+    name: '{{chat_user}}'
+    password: P@ssw0rd
+- name: Make app directory
+  become: yes
+  file:
+    path: /home/{{chat_user}}/app
+    state: directory
+    mode: '755'
+    owner: '{{chat_user}}'
+- name: Permissions
+  become: yes
+  file:
+    path: /home/{{chat_user}}
+    mode: '755'
+- name: Permissions
+  become: yes
+  file:
+    path: /home/{{chat_user}}/app
+    mode: '777'
+- name: Clone Repo
+  become: yes
+  git: 
+    repo: 'https://github.com/ezesundayeze/anonymouse-realtime-chat-app.git'
+    dest: '/home/{{chat_user}}/app'
+    force: yes
+- name: Copy chatapp service file
+  become: yes
+  template:
+    src: chatapp.service
+    dest: /etc/systemd/system/
+- name: NPM Install
+  npm:
+    path: /home/{{chat_user}}/app
+- name: Start chatapp
+  become: yes
+  systemd:
+    name: chatapp
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  notify: restart chatapp

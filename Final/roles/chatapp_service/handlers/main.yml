@@ -1,0 +1,7 @@
+---
+# handlers file for roles/chatapp_service
+- name: restart chatapp
+  become: yes
+  systemd:
+    name: nginx
+    state: restarted

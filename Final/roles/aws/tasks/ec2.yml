@@ -1,0 +1,37 @@
+- name: EC2 Instance
+  ec2:
+    instance_type: t2.micro
+    image: ami-01ed306a12b7d1c96
+    region: "{{ region }}"
+    vpc_subnet_id: "{{ subnet_data.subnet.id }}"
+    group: "{{ securitygroup_data.group_name }}"
+    key_name: aws_private_key
+    assign_public_ip: no
+    volumes:
+      - device_name: /dev/sda1
+        volume_type: gp2
+        volume_size: 8
+        delete_on_termination: yes
+    instance_tags:
+      Name: "{{ ec2instancename }}_instancetag"
+    wait: yes
+    wait_timeout: 500
+    exact_count: 1
+    count_tag:
+      Name: "{{ ec2instancename }}_instancetag"
+  register: ec2instance_data
+- name: Create Elastic IP 
+  ec2_eip:
+    region: "{{ region }}"
+    release_on_disassociation: yes
+    device_id: "{{ ec2instance_data.tagged_instances[0].id }}"
+  register: elasticIP_data
+- name: Refresh Ansible Inventory
+  meta: refresh_inventory
+- name: Output Elastic IP
+  debug:
+    msg: "Elastic IP Created: {{ elasticIP_data.public_ip }}"
+- name: Waiting for AWS status checks
+  wait_for_connection:
+    delay: 70
+    timeout: 90

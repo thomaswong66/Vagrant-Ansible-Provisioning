@@ -1,0 +1,79 @@
+---
+# tasks file for roles/todoapp_service
+
+- name: SEL thingy
+  become: yes
+  selinux: 
+    state: disabled
+- name: create todoapp user
+  become: yes
+  user:
+    name: '{{todo_user}}'
+    password: P@ssw0rd
+- name: Make app directory
+  become: yes
+  file:
+    path: /home/{{todo_user}}/app
+    state: directory
+    mode: '755'
+    owner: '{{todo_user}}'
+- name: Permissions
+  become: yes
+  file:
+    path: /home/{{todo_user}}
+    mode: '755'
+- name: Clone Repo
+  become: yes
+  git: 
+    repo: 'https://github.com/timoguic/ACIT4640-todo-app.git'
+    dest: '/home/{{todo_user}}/app'
+- name: Copy Database file
+  become: yes
+  template:
+    src: database.js
+    dest: /home/{{todo_user}}/app/config/database.js
+
+- name: Copy todoapp file
+  become: yes
+  template:
+    src: todoapp.service
+    dest: /etc/systemd/system
+- name: NPM Install
+  become: yes
+  become_user: '{{todo_user}}'
+  npm:
+    path: /home/{{todo_user}}/app
+
+- name: Ports HTTP
+  become: yes
+  firewalld:
+    service: http
+    zone: public
+    immediate: yes
+    state: enabled
+    permanent: yes
+- name: Ports HTTPS
+  become: yes
+  firewalld:
+    service: https
+    zone: public
+    immediate: yes
+    state: enabled
+    permanent: yes
+- name: Ports SSH
+  become: yes
+  firewalld:
+    service: ssh
+    zone: public
+    immediate: yes
+    state: enabled
+    permanent: yes
+
+- name: Start TodoApp
+  become: yes
+  systemd:
+    name: todoapp
+    enabled: yes
+    state: started
+    daemon_reload: yes
+  notify: restart todoapp

@@ -1,0 +1,126 @@
+---
+- hosts: all
+  vars:
+    todo_user: todoapp
+  tasks:
+    - name: Install required packages wooo yum 
+      become: yes
+      package:
+        name:
+          - nginx
+          - git
+          - mongodb-server
+          - nodejs
+          - mongodb
+          - npm
+          - psmisc
+    - name: SEL thingy
+      become: yes
+      selinux: 
+        state: disabled
+    - name: create todoapp user
+      become: yes
+      user:
+        name: '{{todo_user}}'
+        password: P@ssw0rd
+    - name: Make app directory
+      become: yes
+      file:
+        path: /home/{{todo_user}}/app
+        state: directory
+        mode: '755'
+        owner: '{{todo_user}}'
+    - name: Permissions
+      become: yes
+      file:
+        path: /home/{{todo_user}}
+        mode: '755'
+    - name: Clone Repo
+      become: yes
+      git: 
+        repo: 'https://github.com/timoguic/ACIT4640-todo-app.git'
+        dest: '/home/{{todo_user}}/app'
+    - name: Copy Database file
+      become: yes
+      copy:
+        src: ./files/database.js
+        dest: /home/{{todo_user}}/app/config/database.js
+    - name: Copy Nginx file
+      become: yes
+      copy:
+        src: ./files/nginx.conf
+        dest: /etc/nginx/nginx.conf
+    - name: Copy todoapp service file
+      become: yes
+      copy:
+        src: ./files/todoapp.service
+        dest: /etc/systemd/system
+    - name: NPM Install
+      become: yes
+      become_user: '{{todo_user}}'
+      npm:
+        path: /home/{{todo_user}}/app
+    - name: Ports HTTP
+      become: yes
+      firewalld:
+        service: http
+        zone: public
+        immediate: yes
+        state: enabled
+        permanent: yes
+    - name: Ports HTTPS
+      become: yes
+      firewalld:
+        service: https
+        zone: public
+        immediate: yes
+        state: enabled
+        permanent: yes
+    - name: Ports SSH
+      become: yes
+      firewalld:
+        service: ssh
+        zone: public
+        immediate: yes
+        state: enabled
+        permanent: yes
+    - name: Curl Mongo Folder
+      get_url:
+        dest: /home/admin
+        url: https://acit4640.y.vu/docs/module06/resources/mongodb_ACIT4640.tgz
+        url_username: BCIT
+        url_password: w1nt3r2020
+    - name: Extract Mongo folder
+      unarchive:
+        src: mongodb_ACIT4640.tgz
+        dest: /home
+    - name: mongorestore 
+    become: yes
+    shell: mongorestore -d acit4640 /home/admin/ACIT4640
+    environment:
+      LANG: C
+    - name: Start Nginx
+      become: yes
+      service:
+        name: nginx
+        enabled: yes
+        state: started
+    - name: Start MongoD
+      become: yes
+      service:
+        name: mongod
+        enabled: yes
+        state: started
+    - name: Start TodoApp
+      become: yes
+      systemd:
+        name: todoapp
+        enabled: yes
+        state: started
+        daemon_reload: yes
+    - name: Nginx Restart
+      become: yes
+      systemd:
+        name: nginx
+        state: restarted
+    

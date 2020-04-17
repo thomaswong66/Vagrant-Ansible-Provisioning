@@ -1,0 +1,66 @@
+---
+- name: Create VPC
+  ec2_vpc_net: 
+    cidr_block: "{{ cidr_blocknum }}"
+    name: "{{ vpc_prefixname }}"
+    region: us-west-2
+    state: present
+  register: vpc_data
+- name: print variable value
+  debug:
+    msg: "{{ vpc_data.vpc.id }}"
+- name: create subnet
+  ec2_vpc_subnet:
+    az: us-west-2a
+    region: us-west-2
+    state: present
+    cidr: "{{ subnet_cidrnum }}"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    tags:
+      Name: MY_SUBNET
+  register: subnet_data
+- debug: 
+    msg: "{{ subnet_data }}"
+- name: Create Internet Gateway
+  ec2_vpc_igw:
+    region: "{{ region }}"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    state: present
+    tags:
+      Name: "{{ vpc_prefixname }}_gateway"
+  register: gateway_data
+- name: create routing table
+  ec2_vpc_route_table:
+    region: "{{ region }}"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    state: present
+    subnets:
+      - "{{ subnet_data.subnet.id }}"
+    routes:
+      - dest: "{{ secgroup_ssh_allowed_instructor_cidr }}"
+        gateway_id: "{{ gateway_data.gateway_id }}"
+    tags:
+      Name: "{{ vpc_prefixname }}_table"
+- name: create security group
+  ec2_group:
+    description: rules add
+    name: "{{ vpc_prefixname }}_securitygroup"
+    vpc_id: "{{ vpc_data.vpc.id }}"
+    region: "{{ region }}"
+    state: present
+    rules:
+      - proto: tcp
+        ports:
+        - 22
+        cidr_ip: "{{ secgroup_ssh_allowed_instructor_cidr }}"
+        rule_desc: ssh
+      - proto: tcp
+        ports:
+        - 80
+        cidr_ip: "{{ secgroup_ssh_allowed_instructor_cidr }}"
+        rule_desc: http
+      - proto: tcp
+        ports:
+        - 5000
+        cidr_ip: "{{ secgroup_ssh_allowed_instructor_cidr }}"
+  register: securitygroup_data

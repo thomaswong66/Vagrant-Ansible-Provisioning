@@ -1,0 +1,17 @@
+---
+- name: install wget
+  become: yes
+  yum:
+    name: wget
+    state: present
+- name: Node
+  become: yes
+  command: wget http://nodejs.org/dist/v12.16.2/node-v12.16.2-linux-x64.tar.gz
+  args:
+    warn: false
+- name: Node2
+  become: yes
+  command: tar --strip-components 1 -xzvf node-v12.16.2-linux-x64.tar.gz -C /usr/local
+  args:
+    warn: false
+

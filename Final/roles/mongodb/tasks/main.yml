@@ -1,0 +1,19 @@
+---
+# tasks file for roles/mongodb
+- name: install mongodb
+  become: yes
+  package:
+    name: mongodb
+    state: installed
+- name: install mongodb-server
+  become: yes
+  package:
+    name: mongodb-server
+    state: installed
+    
+- name: Start MongoDB
+  become: yes
+  service:
+    name: mongod
+    enabled: yes
+    state: started

@@ -1,0 +1,9 @@
+---
+# defaults file for roles/aws
+vpc_subnet_cidrnum: 10.56.10.0/24
+region: us-west-2
+vpc_prefixname: Sahil4640Final
+secgroup_ssh_allowed_instructor_cidr: 0.0.0.0/0
+ec2instancename: ACIT4640Final
+cidr_blocknum: 10.56.0.0/16
+subnet_cidrnum: 10.56.90.0/24

@@ -1,0 +1,6 @@
+---
+dependencies:
+  - nginx
+  - nodejs
+  - mongodb
+  - chatapp_service

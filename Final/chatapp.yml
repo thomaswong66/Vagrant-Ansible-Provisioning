@@ -1,0 +1,49 @@
+---
+- hosts: localhost
+  connection: local
+  tasks:
+    - import_role:
+        name: aws
+      tags:
+        - provision
+    - import_role:
+        name: aws
+        tasks_from: info
+      tags:
+        - info
+        - never
+    - import_role:
+        name: aws
+        tasks_from: cleanup
+      tags:
+        - cleanup
+        - never
+- hosts: aws_ec2
+  connection: ssh
+  gather_facts: no
+  vars:
+    chat_user: chatapp
+  tasks:
+  - name: EPEL-RELEASE
+    become: yes
+    yum:
+      name: "https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm"
+      state: present
+    tags:
+      - provision
+  - name: Enable EPEL 
+    become: yes
+    command: yum-config-manager --enable epel
+    tags:
+      - provision
+- hosts: aws_ec2
+  connection: ssh
+  gather_facts: no
+  vars:
+    chat_user: chatapp
+  tasks:
+    - import_role:
+        name: chatapp
+      tags:
+        - deployment
+    

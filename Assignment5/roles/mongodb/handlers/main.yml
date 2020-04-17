@@ -1,0 +1,20 @@
+---
+# handlers file for roles/mongodb
+
+ - name: mongo curl
+   get_url:
+    dest: /home/admin
+    url: https://acit4640.y.vu/docs/module06/resources/mongodb_ACIT4640.tgz
+    url_username: BCIT
+    url_password: w1nt3r2020
+
+ - name: mongo extract
+   unarchive:
+    src: mongodb_ACIT4640.tgz
+    dest: /home
+
+ - name: mongorestore 
+   become: yes
+   shell: mongorestore -d acit4640 /home/admin/ACIT4640
+   environment:
+      LANG: C

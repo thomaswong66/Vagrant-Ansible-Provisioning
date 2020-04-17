@@ -1,0 +1,15 @@
+---
+- name: gather info about EC2 instance
+  ec2_instance:
+    region: "{{ region }}"
+    filters:
+      tag:Name: "{{ ec2instancename }}_instancetag"
+      instance-state-name: running
+  register: ec2_data
+- debug:
+    msg: "{{ ec2_data }}"
+- name: Populate Service facts
+  service_facts:
+  register: service_facts
+- debug:
+    msg: "{{ service_facts }} "
